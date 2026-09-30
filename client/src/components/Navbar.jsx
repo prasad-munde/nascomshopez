@@ -1,185 +1,169 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { useCart } from '../context/CartContext';
 
 const Navbar = () => {
-  const { user, isAuthenticated, isAdmin, logout, resetBalance } = useAuth();
+  const { user, isAuthenticated, isAdmin, logout } = useAuth();
+  const { cart } = useCart();
   const navigate = useNavigate();
-  const [resetting, setResetting] = useState(false);
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
-  const handleResetBalance = async () => {
-    if (window.confirm('Reset your virtual cash balance to $100,000?')) {
-      try {
-        setResetting(true);
-        await resetBalance();
-        window.location.reload();
-      } catch (err) {
-        alert(err.message || 'Failed to reset balance');
-      } finally {
-        setResetting(false);
-      }
-    }
-  };
+  const cartCount = cart?.count || 0;
 
   return (
-    <nav className="navbar navbar-expand-lg navbar-dark navbar-shopez sticky-top">
-      <div className="container-fluid px-3 px-lg-4">
-        <Link className="navbar-brand d-flex align-items-center me-4" to={isAuthenticated ? '/dashboard' : '/'}>
-          <span className="me-2 fs-4">📈</span>
-          <span className="navbar-brand-logo">ShopEZ</span>
-          <span className="badge bg-primary-subtle text-primary border border-primary-subtle ms-2 px-2 py-1 fs-8 text-uppercase" style={{ fontSize: '0.65rem' }}>
-            Sim Trader
-          </span>
+    <nav className="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm py-2">
+      <div className="container">
+        {/* Brand */}
+        <Link className="navbar-brand d-flex align-items-center fw-bold fs-4 text-warning" to="/">
+          <span className="me-2">🛍️</span>
+          <span>ShopEZ</span>
         </Link>
 
+        {/* Mobile toggle button */}
         <button
           className="navbar-toggler border-0"
           type="button"
           data-bs-toggle="collapse"
-          data-bs-target="#navbarContent"
-          aria-controls="navbarContent"
+          data-bs-target="#shopEzNavbar"
+          aria-controls="shopEzNavbar"
           aria-expanded="false"
           aria-label="Toggle navigation"
         >
           <span className="navbar-toggler-icon"></span>
         </button>
 
-        <div className="collapse navbar-collapse" id="navbarContent">
-          <ul className="navbar-nav me-auto mb-2 mb-lg-0">
-            {isAuthenticated ? (
-              <>
-                <li className="nav-item">
-                  <NavLink className="nav-link nav-link-custom" to="/dashboard">
-                    <i className="bi bi-speedometer2 me-1"></i> Dashboard
-                  </NavLink>
-                </li>
-                <li className="nav-item">
-                  <NavLink className="nav-link nav-link-custom" to="/market">
-                    <i className="bi bi-graph-up-arrow me-1"></i> Market
-                  </NavLink>
-                </li>
-                <li className="nav-item">
-                  <NavLink className="nav-link nav-link-custom" to="/portfolio">
-                    <i className="bi bi-pie-chart-fill me-1"></i> Portfolio
-                  </NavLink>
-                </li>
-                <li className="nav-item">
-                  <NavLink className="nav-link nav-link-custom" to="/transactions">
-                    <i className="bi bi-clock-history me-1"></i> Orders
-                  </NavLink>
-                </li>
-                {isAdmin && (
-                  <li className="nav-item">
-                    <NavLink className="nav-link nav-link-custom text-warning" to="/admin">
-                      <i className="bi bi-shield-lock-fill me-1"></i> Admin Panel
-                    </NavLink>
-                  </li>
-                )}
-              </>
-            ) : (
+        {/* Navbar links */}
+        <div className="collapse navbar-collapse" id="shopEzNavbar">
+          <ul className="navbar-nav me-auto mb-2 mb-lg-0 align-items-lg-center">
+            <li className="nav-item">
+              <NavLink className="nav-link px-3" to="/">
+                Home
+              </NavLink>
+            </li>
+            <li className="nav-item">
+              <NavLink className="nav-link px-3" to="/products">
+                Products
+              </NavLink>
+            </li>
+
+            {isAuthenticated && (
               <li className="nav-item">
-                <NavLink className="nav-link nav-link-custom" to="/market">
-                  <i className="bi bi-graph-up me-1"></i> Explore Market
+                <NavLink className="nav-link px-3" to="/orders">
+                  My Orders
                 </NavLink>
+              </li>
+            )}
+
+            {/* Admin Links */}
+            {isAdmin && (
+              <li className="nav-item dropdown">
+                <a
+                  className="nav-link dropdown-toggle text-warning fw-semibold px-3"
+                  href="#"
+                  role="button"
+                  data-bs-toggle="dropdown"
+                  aria-expanded="false"
+                >
+                  ⚡ Admin
+                </a>
+                <ul className="dropdown-menu shadow border-0">
+                  <li>
+                    <Link className="dropdown-item" to="/admin">
+                      Dashboard
+                    </Link>
+                  </li>
+                  <li>
+                    <Link className="dropdown-item" to="/admin/products">
+                      Manage Products
+                    </Link>
+                  </li>
+                  <li>
+                    <Link className="dropdown-item" to="/admin/orders">
+                      Manage Orders
+                    </Link>
+                  </li>
+                </ul>
               </li>
             )}
           </ul>
 
+          {/* Right Action Buttons */}
           <div className="d-flex align-items-center gap-3">
-            {isAuthenticated ? (
-              <>
-                {/* Virtual Cash Balance Indicator */}
-                <div className="d-none d-md-flex align-items-center bg-dark bg-opacity-75 border border-secondary border-opacity-25 rounded-3 px-3 py-1 text-light">
-                  <div className="me-2 text-muted" style={{ fontSize: '0.75rem', lineHeight: '1.2' }}>
-                    VIRTUAL CASH
-                  </div>
-                  <span className="font-mono fw-bold text-success" style={{ fontSize: '1.05rem' }}>
-                    ${user?.balance !== undefined ? user.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}
-                  </span>
-                  <button
-                    className="btn btn-link btn-sm text-secondary p-0 ms-2"
-                    title="Reset virtual balance to $100,000"
-                    onClick={handleResetBalance}
-                    disabled={resetting}
-                  >
-                    <i className={`bi bi-arrow-clockwise ${resetting ? 'spin' : ''}`}></i>
-                  </button>
-                </div>
+            {/* Cart Link with Badge */}
+            <Link to="/cart" className="btn btn-outline-light position-relative px-3 py-1">
+              <span>🛒 Cart</span>
+              {cartCount > 0 && (
+                <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark fw-bold">
+                  {cartCount}
+                  <span className="visually-hidden">items in cart</span>
+                </span>
+              )}
+            </Link>
 
-                {/* User Dropdown */}
-                <div className="dropdown">
-                  <button
-                    className="btn btn-outline-light btn-sm dropdown-toggle d-flex align-items-center gap-2 rounded-3 px-3 py-1"
-                    type="button"
-                    data-bs-toggle="dropdown"
-                    aria-expanded="false"
+            {/* User Profile / Auth State */}
+            {isAuthenticated ? (
+              <div className="dropdown">
+                <button
+                  className="btn btn-warning dropdown-toggle d-flex align-items-center gap-2 fw-semibold px-3 py-1 text-dark"
+                  type="button"
+                  data-bs-toggle="dropdown"
+                  aria-expanded="false"
+                >
+                  <span
+                    className="rounded-circle bg-dark text-warning d-inline-flex justify-content-center align-items-center"
+                    style={{ width: '24px', height: '24px', fontSize: '0.75rem' }}
                   >
-                    <span className="rounded-circle bg-primary text-white d-inline-flex justify-content-center align-items-center" style={{ width: '24px', height: '24px', fontSize: '0.75rem' }}>
-                      {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
-                    </span>
-                    <span className="fw-semibold text-truncate" style={{ maxWidth: '120px' }}>
-                      {user?.name || 'User'}
-                    </span>
-                    {isAdmin && (
-                      <span className="badge bg-warning text-dark ms-1" style={{ fontSize: '0.65rem' }}>
-                        ADMIN
-                      </span>
-                    )}
-                  </button>
-                  <ul className="dropdown-menu dropdown-menu-end shadow-sm border-0 mt-2">
-                    <li className="px-3 py-2 border-bottom">
-                      <div className="fw-bold">{user?.name}</div>
-                      <div className="text-muted small">{user?.email}</div>
-                    </li>
-                    <li className="d-md-none px-3 py-2 border-bottom">
-                      <div className="small text-muted">Virtual Balance</div>
-                      <div className="fw-bold text-success font-mono">
-                        ${user?.balance?.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                      </div>
-                    </li>
+                    {user?.username ? user.username.charAt(0).toUpperCase() : 'U'}
+                  </span>
+                  <span className="text-truncate" style={{ maxWidth: '120px' }}>
+                    {user?.username || 'Account'}
+                  </span>
+                </button>
+                <ul className="dropdown-menu dropdown-menu-end shadow border-0 mt-2">
+                  <li className="px-3 py-2 border-bottom">
+                    <div className="fw-bold">{user?.username}</div>
+                    <div className="text-muted small">{user?.email}</div>
+                    <span className="badge bg-secondary mt-1">{user?.userType || 'USER'}</span>
+                  </li>
+                  <li>
+                    <Link className="dropdown-item py-2" to="/profile">
+                      👤 My Profile
+                    </Link>
+                  </li>
+                  <li>
+                    <Link className="dropdown-item py-2" to="/orders">
+                      📦 My Orders
+                    </Link>
+                  </li>
+                  {isAdmin && (
                     <li>
-                      <Link className="dropdown-item py-2" to="/dashboard">
-                        <i className="bi bi-speedometer2 me-2"></i> Dashboard
+                      <Link className="dropdown-item py-2 text-warning fw-semibold" to="/admin">
+                        ⚡ Admin Dashboard
                       </Link>
                     </li>
-                    <li>
-                      <Link className="dropdown-item py-2" to="/portfolio">
-                        <i className="bi bi-pie-chart me-2"></i> Portfolio
-                      </Link>
-                    </li>
-                    {isAdmin && (
-                      <li>
-                        <Link className="dropdown-item py-2 text-warning" to="/admin">
-                          <i className="bi bi-shield-check me-2"></i> Admin Center
-                        </Link>
-                      </li>
-                    )}
-                    <li>
-                      <button className="dropdown-item py-2" onClick={handleResetBalance}>
-                        <i className="bi bi-arrow-repeat me-2"></i> Reset Cash Balance
-                      </button>
-                    </li>
-                    <li><hr className="dropdown-divider" /></li>
-                    <li>
-                      <button className="dropdown-item py-2 text-danger" onClick={handleLogout}>
-                        <i className="bi bi-box-arrow-right me-2"></i> Log Out
-                      </button>
-                    </li>
-                  </ul>
-                </div>
-              </>
+                  )}
+                  <li>
+                    <hr className="dropdown-divider" />
+                  </li>
+                  <li>
+                    <button className="dropdown-item py-2 text-danger fw-semibold" onClick={handleLogout}>
+                      🚪 Log Out
+                    </button>
+                  </li>
+                </ul>
+              </div>
             ) : (
               <div className="d-flex gap-2">
-                <Link to="/login" className="btn btn-outline-light btn-sm px-3 fw-semibold rounded-2">
-                  Sign In
+                <Link to="/login" className="btn btn-outline-warning btn-sm px-3 fw-semibold">
+                  Login
                 </Link>
-                <Link to="/register" className="btn btn-primary btn-sm px-3 fw-semibold rounded-2">
-                  Get Started
+                <Link to="/register" className="btn btn-warning btn-sm px-3 fw-semibold text-dark">
+                  Register
                 </Link>
               </div>
             )}

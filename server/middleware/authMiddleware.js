@@ -4,10 +4,7 @@ const User = require('../models/User');
 const protect = async (req, res, next) => {
   let token;
 
-  if (
-    req.headers.authorization &&
-    req.headers.authorization.startsWith('Bearer')
-  ) {
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     token = req.headers.authorization.split(' ')[1];
   }
 
@@ -21,7 +18,7 @@ const protect = async (req, res, next) => {
   try {
     const decoded = jwt.verify(
       token,
-      process.env.JWT_SECRET || 'shopez_default_jwt_secret'
+      process.env.JWT_SECRET || 'shopez_secret_key_academic_2026'
     );
 
     const user = await User.findById(decoded.id);
@@ -30,13 +27,6 @@ const protect = async (req, res, next) => {
       return res.status(401).json({
         success: false,
         message: 'The user belonging to this token no longer exists.',
-      });
-    }
-
-    if (!user.isActive) {
-      return res.status(403).json({
-        success: false,
-        message: 'Your account has been deactivated. Please contact support.',
       });
     }
 
@@ -50,5 +40,15 @@ const protect = async (req, res, next) => {
   }
 };
 
-module.exports = { protect };
+const admin = (req, res, next) => {
+  if (req.user && req.user.userType === 'ADMIN') {
+    next();
+  } else {
+    return res.status(403).json({
+      success: false,
+      message: 'Not authorized as an admin.',
+    });
+  }
+};
 
+module.exports = { protect, admin };

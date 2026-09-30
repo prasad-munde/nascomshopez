@@ -1,339 +1,221 @@
 require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
 const mongoose = require('mongoose');
 const User = require('../models/User');
-const Stock = require('../models/Stock');
-const Portfolio = require('../models/Portfolio');
-const Transaction = require('../models/Transaction');
-const { generateHistoricalData } = require('../utils/stockSimulator');
+const Product = require('../models/Product');
+const Cart = require('../models/Cart');
+const Order = require('../models/Order');
+const Admin = require('../models/Admin');
 
-const stocksData = [
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/shopez';
+
+const productsData = [
   {
-    symbol: 'AAPL',
-    name: 'Apple Inc.',
-    sector: 'Technology',
-    currentPrice: 195.5,
-    previousClose: 193.8,
-    dayHigh: 196.8,
-    dayLow: 193.5,
-    marketCap: 2998000000000,
-    peRatio: 31.4,
-    volume: 58240000,
-    high52Week: 237.23,
-    low52Week: 164.08,
-    description:
-      'Apple Inc. designs, manufactures, and markets smartphones, personal computers, tablets, wearables, and accessories, and sells a variety of related services including iCloud, Apple Music, and the App Store.',
+    title: 'Classic Crewneck Cotton T-Shirt',
+    description: '100% combed cotton everyday crewneck t-shirt with reinforced ribbed collar.',
+    mainImg: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=800&q=80',
+    sizes: ['S', 'M', 'L', 'XL'],
+    category: 'T-Shirts',
+    gender: 'Men',
+    price: 499,
+    discount: 10,
   },
   {
-    symbol: 'MSFT',
-    name: 'Microsoft Corporation',
-    sector: 'Technology',
-    currentPrice: 448.2,
-    previousClose: 445.1,
-    dayHigh: 450.3,
-    dayLow: 444.0,
-    marketCap: 3330000000000,
-    peRatio: 36.2,
-    volume: 24150000,
-    high52Week: 468.35,
-    low52Week: 309.45,
-    description:
-      'Microsoft Corporation develops and supports software, services, devices and solutions worldwide, including Microsoft 365, Azure Cloud Infrastructure, Windows, LinkedIn, and Xbox gaming platforms.',
+    title: 'Graphic Streetwear Oversized Tee',
+    description: 'Heavyweight 240 GSM drop-shoulder streetwear graphic t-shirt with vintage wash.',
+    mainImg: 'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&w=800&q=80',
+    sizes: ['M', 'L', 'XL'],
+    category: 'T-Shirts',
+    gender: 'Unisex',
+    price: 799,
+    discount: 15,
   },
   {
-    symbol: 'NVDA',
-    name: 'NVIDIA Corporation',
-    sector: 'Semiconductors',
-    currentPrice: 128.4,
-    previousClose: 125.1,
-    dayHigh: 130.2,
-    dayLow: 124.8,
-    marketCap: 3158000000000,
-    peRatio: 68.5,
-    volume: 98450000,
-    high52Week: 140.76,
-    low52Week: 39.23,
-    description:
-      'NVIDIA Corporation pioneers accelerated computing to tackle challenges ordinary computers cannot. Creator of GPUs for gaming, professional visualization, data centers, and advanced artificial intelligence models.',
+    title: 'Slim Fit Oxford Button-Down Shirt',
+    description: 'Crisp, breathable long-sleeve oxford cotton formal shirt suitable for casual or office wear.',
+    mainImg: 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&w=800&q=80',
+    sizes: ['38', '40', '42', '44'],
+    category: 'Shirts',
+    gender: 'Men',
+    price: 1299,
+    discount: 20,
   },
   {
-    symbol: 'GOOGL',
-    name: 'Alphabet Inc.',
-    sector: 'Technology',
-    currentPrice: 179.8,
-    previousClose: 181.5,
-    dayHigh: 182.4,
-    dayLow: 178.6,
-    marketCap: 2240000000000,
-    peRatio: 26.8,
-    volume: 29800000,
-    high52Week: 191.75,
-    low52Week: 120.21,
-    description:
-      'Alphabet Inc. offers products and platforms globally through Google Services, Google Cloud, Android, Chrome, YouTube, Google Play, Search, and Google Gemini AI.',
+    title: 'Casual Striped Relaxed Linen Shirt',
+    description: 'Breezy linen-cotton blend casual resort shirt designed for warm weather comfort.',
+    mainImg: 'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?auto=format&fit=crop&w=800&q=80',
+    sizes: ['S', 'M', 'L'],
+    category: 'Shirts',
+    gender: 'Men',
+    price: 1399,
+    discount: 25,
   },
   {
-    symbol: 'AMZN',
-    name: 'Amazon.com Inc.',
-    sector: 'Consumer Cyclical',
-    currentPrice: 185.3,
-    previousClose: 183.2,
-    dayHigh: 186.7,
-    dayLow: 182.9,
-    marketCap: 1928000000000,
-    peRatio: 51.3,
-    volume: 41200000,
-    high52Week: 201.2,
-    low52Week: 118.35,
-    description:
-      'Amazon.com, Inc. focuses on retail sale of consumer products and subscriptions through online and physical stores, Amazon Web Services (AWS) cloud computing, and digital entertainment streaming.',
+    title: 'Urban High-Rise Tapered Jeans',
+    description: 'Durable stretch denim with slim tapered fit and authentic stone wash texture.',
+    mainImg: 'https://images.unsplash.com/photo-1542272604-780c96856592?auto=format&fit=crop&w=800&q=80',
+    sizes: ['30', '32', '34', '36'],
+    category: 'Jeans',
+    gender: 'Men',
+    price: 1899,
+    discount: 30,
   },
   {
-    symbol: 'TSLA',
-    name: 'Tesla, Inc.',
-    sector: 'Automotive',
-    currentPrice: 254.6,
-    previousClose: 260.4,
-    dayHigh: 262.1,
-    dayLow: 251.8,
-    marketCap: 811000000000,
-    peRatio: 72.1,
-    volume: 87100000,
-    high52Week: 271.0,
-    low52Week: 138.8,
-    description:
-      'Tesla, Inc. designs, develops, manufactures, sells, and leases high-performance fully electric vehicles, solar roof installations, energy storage systems, and autonomous driving technology.',
+    title: 'High-Waist Stretch Ankle Leggings',
+    description: 'Comfortable 4-way stretch denim blend leggings with snug high-rise waistband.',
+    mainImg: 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?auto=format&fit=crop&w=800&q=80',
+    sizes: ['28', '30', '32'],
+    category: 'Jeans',
+    gender: 'Women',
+    price: 999,
+    discount: 15,
   },
   {
-    symbol: 'META',
-    name: 'Meta Platforms, Inc.',
-    sector: 'Communication Services',
-    currentPrice: 502.1,
-    previousClose: 498.6,
-    dayHigh: 506.4,
-    dayLow: 497.0,
-    marketCap: 1275000000000,
-    peRatio: 28.7,
-    volume: 16800000,
-    high52Week: 542.81,
-    low52Week: 279.4,
-    description:
-      'Meta Platforms, Inc. engages in the development of products that enable people to connect and share through mobile devices, personal computers, virtual reality headsets, and social apps (Facebook, Instagram, WhatsApp, Messenger).',
+    title: 'White Low-Top Leather Court Shoes',
+    description: 'Minimalist synthetic leather everyday low-top sneaker with cushioned insole.',
+    mainImg: 'https://images.unsplash.com/photo-1549298916-b41d501d3772?auto=format&fit=crop&w=800&q=80',
+    sizes: ['7', '8', '9', '10'],
+    category: 'Footwear',
+    gender: 'Unisex',
+    price: 2899,
+    discount: 20,
   },
   {
-    symbol: 'JPM',
-    name: 'JPMorgan Chase & Co.',
-    sector: 'Financial Services',
-    currentPrice: 208.75,
-    previousClose: 207.1,
-    dayHigh: 209.8,
-    dayLow: 206.5,
-    marketCap: 597000000000,
-    peRatio: 12.3,
-    volume: 11400000,
-    high52Week: 217.5,
-    low52Week: 140.35,
-    description:
-      'JPMorgan Chase & Co. operates as a financial services firm providing investment banking, asset management, treasury, and commercial and retail banking services to millions of customers globally.',
+    title: 'Athletic Lightweight Running Sneakers',
+    description: 'Breathable flyknit mesh upper and shock-absorbing EVA foam sole for daily jogging.',
+    mainImg: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=800&q=80',
+    sizes: ['7', '8', '9', '10', '11'],
+    category: 'Footwear',
+    gender: 'Unisex',
+    price: 3499,
+    discount: 35,
   },
   {
-    symbol: 'V',
-    name: 'Visa Inc.',
-    sector: 'Financial Services',
-    currentPrice: 272.9,
-    previousClose: 274.0,
-    dayHigh: 275.2,
-    dayLow: 271.8,
-    marketCap: 554000000000,
-    peRatio: 30.1,
-    volume: 7800000,
-    high52Week: 290.96,
-    low52Week: 227.78,
-    description:
-      'Visa Inc. operates the world’s largest retail electronic payments network connecting consumers, merchants, financial institutions, and government entities across more than 200 countries.',
+    title: 'Vintage Washed Denim Jacket',
+    description: 'Timeless trucker jean jacket featuring twin chest flap pockets and adjustable button tabs.',
+    mainImg: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&w=800&q=80',
+    sizes: ['S', 'M', 'L', 'XL'],
+    category: 'Jackets',
+    gender: 'Unisex',
+    price: 2499,
+    discount: 10,
   },
   {
-    symbol: 'WMT',
-    name: 'Walmart Inc.',
-    sector: 'Consumer Defensive',
-    currentPrice: 68.4,
-    previousClose: 67.9,
-    dayHigh: 68.9,
-    dayLow: 67.8,
-    marketCap: 550000000000,
-    peRatio: 33.2,
-    volume: 19500000,
-    high52Week: 71.33,
-    low52Week: 49.85,
-    description:
-      'Walmart Inc. engages in the operation of retail, wholesale, and other units worldwide, offering groceries, merchandise, apparel, pharmacy, and financial services at everyday low prices.',
+    title: 'Cozy Fleece Pullover Hoodie',
+    description: 'Soft brushed thermal fleece hoodie with spacious front kangaroo pocket.',
+    mainImg: 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=800&q=80',
+    sizes: ['M', 'L', 'XL'],
+    category: 'Jackets',
+    gender: 'Unisex',
+    price: 1599,
+    discount: 20,
   },
   {
-    symbol: 'DIS',
-    name: 'The Walt Disney Company',
-    sector: 'Entertainment',
-    currentPrice: 96.15,
-    previousClose: 97.4,
-    dayHigh: 98.0,
-    dayLow: 95.8,
-    marketCap: 175000000000,
-    peRatio: 38.6,
-    volume: 12200000,
-    high52Week: 123.74,
-    low52Week: 78.73,
-    description:
-      'The Walt Disney Company operates as an entertainment company worldwide through Disney Entertainment, ESPN, Parks, Experiences, and Consumer Products including Disney+, Hulu, and Pixar studios.',
+    title: 'Floral Print Summer Boho Dress',
+    description: 'Flowing lightweight bohemian tiered midi dress with subtle ruffles and waist cinch.',
+    mainImg: 'https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?auto=format&fit=crop&w=800&q=80',
+    sizes: ['XS', 'S', 'M', 'L'],
+    category: 'Dresses',
+    gender: 'Women',
+    price: 1799,
+    discount: 25,
   },
   {
-    symbol: 'NFLX',
-    name: 'Netflix, Inc.',
-    sector: 'Communication Services',
-    currentPrice: 675.2,
-    previousClose: 668.0,
-    dayHigh: 679.5,
-    dayLow: 665.0,
-    marketCap: 289000000000,
-    peRatio: 43.8,
-    volume: 4500000,
-    high52Week: 697.49,
-    low52Week: 344.73,
-    description:
-      'Netflix, Inc. provides entertainment services including TV series, documentaries, feature films, and mobile games across various genres and languages to over 270 million paid memberships globally.',
+    title: 'Classic Leather Minimalist Watch',
+    description: 'Sleek analog wrist watch with Japanese quartz movement and genuine leather strap.',
+    mainImg: 'https://images.unsplash.com/photo-1524805444758-089113d48a6d?auto=format&fit=crop&w=800&q=80',
+    sizes: ['Free Size'],
+    category: 'Accessories',
+    gender: 'Unisex',
+    price: 2199,
+    discount: 15,
   },
 ];
 
 const seedDB = async () => {
   try {
-    const mongoUri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/shopez_trading';
-    console.log(`Connecting to MongoDB at: ${mongoUri}`);
-    await mongoose.connect(mongoUri);
+    console.log(`[ShopEZ Seed] Connecting to MongoDB: ${MONGO_URI}`);
+    await mongoose.connect(MONGO_URI);
 
-    console.log('Cleaning existing records...');
+    console.log('[ShopEZ Seed] Clearing previous collections...');
     await Promise.all([
       User.deleteMany({}),
-      Stock.deleteMany({}),
-      Portfolio.deleteMany({}),
-      Transaction.deleteMany({}),
+      Product.deleteMany({}),
+      Cart.deleteMany({}),
+      Order.deleteMany({}),
+      Admin.deleteMany({}),
     ]);
 
-    console.log('Creating Admin & Demo Trader users...');
+    console.log('[ShopEZ Seed] Seeding Users...');
     const adminUser = await User.create({
-      name: 'ShopEZ Admin',
+      username: 'admin',
       email: 'admin@shopez.com',
-      password: 'AdminPassword123!',
-      role: 'admin',
-      balance: 250000.0,
-      isActive: true,
+      password: 'admin123',
+      userType: 'ADMIN',
     });
 
-    const demoTrader = await User.create({
-      name: 'Alex Trader',
-      email: 'trader@shopez.com',
-      password: 'TraderPassword123!',
-      role: 'user',
-      balance: 85500.0,
-      isActive: true,
+    const standardUser = await User.create({
+      username: 'johndoe',
+      email: 'user@shopez.com',
+      password: 'user123',
+      userType: 'USER',
     });
 
-    console.log('Admin credentials: admin@shopez.com / AdminPassword123!');
-    console.log('Trader credentials: trader@shopez.com / TraderPassword123!');
+    console.log('[ShopEZ Seed] Users created:');
+    console.log('  Admin -> admin@shopez.com / admin123 (ADMIN)');
+    console.log('  User  -> user@shopez.com  / user123  (USER)');
 
-    console.log('Seeding stock catalog with realistic historical data...');
-    const createdStocks = [];
-    for (const stockInfo of stocksData) {
-      const historicalPrices = generateHistoricalData(stockInfo.currentPrice, 60);
-      const stockDoc = await Stock.create({
-        ...stockInfo,
-        historicalPrices,
-      });
-      createdStocks.push(stockDoc);
-    }
-    console.log(`Created ${createdStocks.length} stocks.`);
+    console.log('[ShopEZ Seed] Seeding Products...');
+    const createdProducts = await Product.insertMany(productsData);
+    console.log(`[ShopEZ Seed] Successfully seeded ${createdProducts.length} products.`);
 
-    // Find AAPL, NVDA, MSFT to seed initial portfolio for demoTrader
-    const aapl = createdStocks.find((s) => s.symbol === 'AAPL');
-    const nvda = createdStocks.find((s) => s.symbol === 'NVDA');
-    const msft = createdStocks.find((s) => s.symbol === 'MSFT');
+    console.log('[ShopEZ Seed] Seeding Admin banner and categories configuration...');
+    await Admin.create({
+      banner: [
+        'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=1200&q=80',
+        'https://images.unsplash.com/photo-1472851294608-062f824d29cc?auto=format&fit=crop&w=1200&q=80',
+      ],
+      categories: ['T-Shirts', 'Shirts', 'Jeans', 'Footwear', 'Jackets', 'Dresses', 'Accessories'],
+    });
 
-    console.log('Seeding demo holdings and transactions for trader...');
-    if (aapl && nvda && msft) {
-      // AAPL Holding
-      await Portfolio.create({
-        user: demoTrader._id,
-        stock: aapl._id,
-        symbol: 'AAPL',
-        quantity: 25,
-        averageBuyPrice: 185.0,
-        totalInvested: 4625.0,
-      });
-
-      // NVDA Holding
-      await Portfolio.create({
-        user: demoTrader._id,
-        stock: nvda._id,
-        symbol: 'NVDA',
-        quantity: 40,
-        averageBuyPrice: 115.5,
-        totalInvested: 4620.0,
-      });
-
-      // MSFT Holding
-      await Portfolio.create({
-        user: demoTrader._id,
-        stock: msft._id,
-        symbol: 'MSFT',
-        quantity: 12,
-        averageBuyPrice: 438.0,
-        totalInvested: 5256.0,
-      });
-
-      // Sample transactions
-      const txs = [
+    console.log('[ShopEZ Seed] Seeding initial sample order for user...');
+    const firstProd = createdProducts[0];
+    await Order.create({
+      userId: standardUser._id,
+      productId: firstProd._id,
+      name: 'John Doe',
+      mobile: '9876543210',
+      email: 'user@shopez.com',
+      address: 'Room 304, Academic Boys Hostel, University Campus',
+      pincode: '560001',
+      size: 'L',
+      quantity: 1,
+      price: firstProd.price,
+      discount: firstProd.discount,
+      totalAmount: Math.round(firstProd.price * (1 - firstProd.discount / 100)),
+      paymentMethod: 'Cash on Delivery',
+      orderDate: new Date(),
+      deliveryDate: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000),
+      orderStatus: 'Order Placed',
+      items: [
         {
-          user: demoTrader._id,
-          stock: aapl._id,
-          symbol: 'AAPL',
-          stockName: aapl.name,
-          type: 'BUY',
-          quantity: 25,
-          price: 185.0,
-          totalAmount: 4625.0,
-          timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+          productId: firstProd._id,
+          title: firstProd.title,
+          mainImg: firstProd.mainImg,
+          size: 'L',
+          quantity: 1,
+          price: firstProd.price,
+          discount: firstProd.discount,
         },
-        {
-          user: demoTrader._id,
-          stock: nvda._id,
-          symbol: 'NVDA',
-          stockName: nvda.name,
-          type: 'BUY',
-          quantity: 40,
-          price: 115.5,
-          totalAmount: 4620.0,
-          timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
-        },
-        {
-          user: demoTrader._id,
-          stock: msft._id,
-          symbol: 'MSFT',
-          stockName: msft.name,
-          type: 'BUY',
-          quantity: 12,
-          price: 438.0,
-          totalAmount: 5256.0,
-          timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-        },
-      ];
+      ],
+    });
 
-      await Transaction.insertMany(txs);
-    }
-
-    console.log('Database seeding successfully finished!');
+    console.log('[ShopEZ Seed] Database seeding finished successfully!');
     await mongoose.connection.close();
     process.exit(0);
   } catch (error) {
-    console.error('Error seeding database:', error);
+    console.error('[ShopEZ Seed] Seeding error:', error);
     process.exit(1);
   }
 };
 
 seedDB();
-

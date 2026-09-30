@@ -8,19 +8,31 @@ const GENDERS = ['All', 'Men', 'Women', 'Unisex'];
 
 const ProductsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const initialCategory = searchParams.get('category') || 'All';
-  const initialSearch = searchParams.get('search') || '';
-
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState(initialSearch);
-  const [category, setCategory] = useState(initialCategory);
+  const [error, setError] = useState(null);
+
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
+  const [category, setCategory] = useState(searchParams.get('category') || 'All');
   const [gender, setGender] = useState('All');
   const [sort, setSort] = useState('newest');
+
+  // Sync category and search when query params change in URL
+  useEffect(() => {
+    const urlCategory = searchParams.get('category');
+    if (urlCategory) {
+      setCategory(urlCategory);
+    }
+    const urlSearch = searchParams.get('search');
+    if (urlSearch !== null) {
+      setSearchTerm(urlSearch);
+    }
+  }, [searchParams]);
 
   const fetchProducts = async () => {
     try {
       setLoading(true);
+      setError(null);
       const params = {};
       if (searchTerm.trim()) params.search = searchTerm.trim();
       if (category !== 'All') params.category = category;
@@ -31,6 +43,11 @@ const ProductsPage = () => {
       setProducts(data || []);
     } catch (err) {
       console.error('Error fetching products:', err);
+      setError(
+        err.response?.data?.message ||
+        err.message ||
+        'Unable to load products from server. Please check backend connection.'
+      );
     } finally {
       setLoading(false);
     }
@@ -59,7 +76,9 @@ const ProductsPage = () => {
       <div className="d-md-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
         <div>
           <h2 className="fw-bold mb-1">Browse Products</h2>
-          <p className="text-muted small mb-0">Showing {products.length} items in the catalog</p>
+          <p className="text-muted small mb-0">
+            {loading ? 'Fetching products...' : `Showing ${products.length} product(s) available`}
+          </p>
         </div>
 
         {/* Search input */}
@@ -67,7 +86,7 @@ const ProductsPage = () => {
           <input
             type="text"
             className="form-control me-2"
-            placeholder="Search by title, style..."
+            placeholder="Search products..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -148,13 +167,23 @@ const ProductsPage = () => {
 
         {/* Products Grid */}
         <div className="col-lg-9">
+          {error && (
+            <div className="alert alert-danger shadow-sm mb-4" role="alert">
+              <h5 className="alert-heading fw-bold">Connection Issue</h5>
+              <p className="mb-2">{error}</p>
+              <button className="btn btn-outline-danger btn-sm fw-semibold" onClick={fetchProducts}>
+                🔄 Retry Fetching Products
+              </button>
+            </div>
+          )}
+
           {loading ? (
             <div className="text-center py-5">
               <div className="spinner-border text-warning" role="status">
                 <span className="visually-hidden">Loading products...</span>
               </div>
             </div>
-          ) : products.length === 0 ? (
+          ) : !error && products.length === 0 ? (
             <div className="card text-center p-5 border-0 shadow-sm">
               <div className="fs-1 mb-3">🔍</div>
               <h4>No products matched your criteria</h4>
