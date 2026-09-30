@@ -1,11 +1,11 @@
 {
   "name": "shopez-server",
   "version": "1.0.0",
-  "description": "Backend API for ShopEZ Stock Trading Simulation Platform",
-  "main": "server.js",
+  "description": "Backend API for ShopEZ E-Commerce Platform",
+  "main": "index.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js",
+    "start": "node index.js",
+    "dev": "nodemon index.js",
     "seed": "node seeds/seed.js"
   },
   "dependencies": {
@@ -23,4 +23,3 @@
     "nodemon": "^3.1.4"
   }
 }
-

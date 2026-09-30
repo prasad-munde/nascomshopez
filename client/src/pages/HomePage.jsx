@@ -1,179 +1,185 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { stockService } from '../services/stockService';
-import { useAuth } from '../hooks/useAuth';
+import { productService } from '../services/productService';
+import { adminService } from '../services/adminService';
+import ProductCard from '../components/ProductCard';
 
 const HomePage = () => {
-  const { isAuthenticated } = useAuth();
-  const [marketStats, setMarketStats] = useState(null);
+  const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [banner, setBanner] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchOverview = async () => {
+    const loadHomeData = async () => {
       try {
-        const res = await stockService.getMarketOverview();
-        if (res.success) {
-          setMarketStats(res.data);
+        setLoading(true);
+        const [prodData, configData] = await Promise.all([
+          productService.getAllProducts(),
+          adminService.getConfig().catch(() => ({
+            banner: [
+              'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=1200&q=80',
+            ],
+            categories: ['T-Shirts', 'Shirts', 'Jeans', 'Footwear', 'Jackets'],
+          })),
+        ]);
+
+        setProducts(prodData || []);
+        if (configData) {
+          setCategories(configData.categories || ['T-Shirts', 'Shirts', 'Jeans', 'Footwear', 'Jackets']);
+          setBanner(configData.banner || []);
         }
       } catch (err) {
-        console.error('Failed to load market overview', err);
+        console.error('Error loading homepage data:', err);
       } finally {
         setLoading(false);
       }
     };
-    fetchOverview();
+
+    loadHomeData();
   }, []);
 
   return (
-    <div className="home-page">
-      {/* Hero Section */}
-      <section className="bg-dark text-white py-5 position-relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #0f172a 0%, #1e293b 100%)' }}>
-        <div className="container py-lg-4">
-          <div className="row align-items-center gy-4">
-            <div className="col-lg-7">
-              <span className="badge bg-primary bg-opacity-25 text-primary border border-primary border-opacity-50 px-3 py-2 rounded-pill fw-semibold mb-3">
-                <span className="ticker-pulse"></span> Virtual Stock Trading Platform
+    <div className="pb-5">
+      {/* Hero Banner */}
+      <section className="bg-dark text-white py-5 position-relative overflow-hidden mb-5">
+        <div className="container py-4">
+          <div className="row align-items-center">
+            <div className="col-lg-6 mb-4 mb-lg-0">
+              <span className="badge bg-warning text-dark px-3 py-2 fs-6 mb-3 fw-bold">
+                🎉 Great College E-Commerce Deals
               </span>
-              <h1 className="display-4 fw-extrabold tracking-tight mb-3">
-                Master the Markets with <span className="text-primary">ShopEZ</span>
+              <h1 className="display-4 fw-bold mb-3">
+                Discover Trending Fashion at <span className="text-warning">ShopEZ</span>
               </h1>
-              <p className="lead text-secondary mb-4" style={{ fontSize: '1.2rem', lineHeight: '1.7' }}>
-                Practice trading top stocks like Apple, NVIDIA, and Microsoft in a realistic, zero-risk simulation environment. Get started immediately with <strong>$100,000</strong> in virtual capital.
+              <p className="lead text-light text-opacity-75 mb-4">
+                Explore premium apparel, footwear, and accessories with instant simulated checkout, reliable order tracking, and high discounts.
               </p>
-              <div className="d-flex flex-wrap gap-3">
-                {isAuthenticated ? (
-                  <Link to="/dashboard" className="btn btn-primary btn-lg px-4 fw-bold rounded-3 shadow">
-                    <i className="bi bi-speedometer2 me-2"></i> Go to Dashboard
-                  </Link>
-                ) : (
-                  <>
-                    <Link to="/register" className="btn btn-primary btn-lg px-4 fw-bold rounded-3 shadow">
-                      Start Trading Free <i className="bi bi-arrow-right ms-2"></i>
-                    </Link>
-                    <Link to="/login" className="btn btn-outline-light btn-lg px-4 fw-semibold rounded-3">
-                      Sign In
-                    </Link>
-                  </>
-                )}
-                <Link to="/market" className="btn btn-link text-light text-decoration-none px-3 py-2 fw-semibold">
-                  <i className="bi bi-graph-up me-1"></i> View Live Market
+              <div className="d-flex gap-3">
+                <Link to="/products" className="btn btn-warning btn-lg fw-bold px-4">
+                  Shop Now 🛍️
+                </Link>
+                <Link to="/login" className="btn btn-outline-light btn-lg px-4">
+                  Demo Sign In
                 </Link>
               </div>
-
-              {/* Demo Accounts Callout */}
-              <div className="mt-4 pt-3 border-top border-secondary border-opacity-25">
-                <div className="small text-muted mb-2">Instant Demo Logins Available:</div>
-                <div className="d-flex flex-wrap gap-3 small">
-                  <span className="badge bg-secondary bg-opacity-50 text-light p-2">
-                    <strong className="text-info">Trader:</strong> trader@shopez.com / TraderPassword123!
-                  </span>
-                  <span className="badge bg-secondary bg-opacity-50 text-light p-2">
-                    <strong className="text-warning">Admin:</strong> admin@shopez.com / AdminPassword123!
-                  </span>
-                </div>
-              </div>
             </div>
-
-            {/* Quick Preview Widget */}
-            <div className="col-lg-5">
-              <div className="card bg-slate-900 border border-secondary border-opacity-25 rounded-4 shadow-lg text-white p-4" style={{ background: '#1e293b' }}>
-                <div className="d-flex justify-content-between align-items-center mb-3">
-                  <div className="fw-bold fs-5">
-                    <i className="bi bi-lightning-charge-fill text-warning me-1"></i> Market Movers
-                  </div>
-                  <span className="badge bg-success bg-opacity-25 text-success border border-success border-opacity-25">
-                    Live Simulator
-                  </span>
-                </div>
-
-                {loading ? (
-                  <div className="py-4 text-center text-muted">Loading market movers...</div>
-                ) : (
-                  <div className="d-flex flex-column gap-2">
-                    {marketStats?.topGainers?.slice(0, 4).map((stock) => (
-                      <Link
-                        key={stock.symbol}
-                        to={`/stocks/${stock.symbol}`}
-                        className="d-flex justify-content-between align-items-center p-2 rounded-3 text-decoration-none text-white hover-bg-dark"
-                        style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}
-                      >
-                        <div className="d-flex align-items-center gap-2">
-                          <span className="badge bg-primary px-2 py-1 font-mono fw-bold">
-                            {stock.symbol}
-                          </span>
-                          <span className="small text-truncate" style={{ maxWidth: '140px' }}>
-                            {stock.name}
-                          </span>
-                        </div>
-                        <div className="text-end font-mono">
-                          <div className="fw-bold">${stock.currentPrice?.toFixed(2)}</div>
-                          <div className="text-success small fw-semibold">
-                            +{stock.dailyChangePercent?.toFixed(2)}%
-                          </div>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                )}
-
-                <div className="mt-4 pt-3 border-top border-secondary border-opacity-25 text-center">
-                  <Link to="/market" className="text-decoration-none text-primary fw-semibold small">
-                    Explore All Available Stocks <i className="bi bi-chevron-right"></i>
-                  </Link>
-                </div>
-              </div>
+            <div className="col-lg-6 text-center">
+              <img
+                src={
+                  banner[0] ||
+                  'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=800&q=80'
+                }
+                alt="ShopEZ Fashion Banner"
+                className="img-fluid rounded-4 shadow-lg"
+                style={{ maxHeight: '380px', width: '100%', objectFit: 'cover' }}
+              />
             </div>
           </div>
         </div>
       </section>
 
-      {/* Features Overview */}
-      <section className="py-5 bg-white border-bottom">
-        <div className="container py-4">
-          <div className="text-center max-w-xl mx-auto mb-5">
-            <h2 className="fw-bold">Everything You Need to Simulate the Stock Market</h2>
-            <p className="text-muted">Built for learning, testing strategies, and experiencing stock trading dynamics.</p>
+      {/* Feature highlights */}
+      <div className="container mb-5">
+        <div className="row g-4 text-center">
+          <div className="col-6 col-md-3">
+            <div className="p-3 bg-light rounded-3 border">
+              <div className="fs-2 mb-2">🚚</div>
+              <h6 className="fw-bold mb-1">Fast Delivery</h6>
+              <p className="text-muted small mb-0">Delivered within 5 business days</p>
+            </div>
           </div>
+          <div className="col-6 col-md-3">
+            <div className="p-3 bg-light rounded-3 border">
+              <div className="fs-2 mb-2">🛡️</div>
+              <h6 className="fw-bold mb-1">Simulated Payments</h6>
+              <p className="text-muted small mb-0">Safe Cash on Delivery & Virtual Pay</p>
+            </div>
+          </div>
+          <div className="col-6 col-md-3">
+            <div className="p-3 bg-light rounded-3 border">
+              <div className="fs-2 mb-2">🔄</div>
+              <h6 className="fw-bold mb-1">Easy Exchanges</h6>
+              <p className="text-muted small mb-0">Hassle-free student friendly returns</p>
+            </div>
+          </div>
+          <div className="col-6 col-md-3">
+            <div className="p-3 bg-light rounded-3 border">
+              <div className="fs-2 mb-2">🏷️</div>
+              <h6 className="fw-bold mb-1">Best Discounts</h6>
+              <p className="text-muted small mb-0">Up to 35% off on trending clothes</p>
+            </div>
+          </div>
+        </div>
+      </div>
 
+      {/* Categories Section */}
+      <div className="container mb-5">
+        <div className="d-flex justify-content-between align-items-center mb-4">
+          <h3 className="fw-bold mb-0">Shop by Category</h3>
+          <Link to="/products" className="text-decoration-none fw-semibold text-warning">
+            View All &rarr;
+          </Link>
+        </div>
+        <div className="row g-3">
+          {categories.map((cat, idx) => (
+            <div className="col-6 col-sm-4 col-md-3 col-lg-2" key={idx}>
+              <Link
+                to={`/products?category=${encodeURIComponent(cat)}`}
+                className="card text-center p-3 h-100 text-decoration-none border shadow-sm category-card text-dark"
+              >
+                <div className="fs-1 mb-2">
+                  {cat === 'T-Shirts'
+                    ? '👕'
+                    : cat === 'Shirts'
+                    ? '👔'
+                    : cat === 'Jeans'
+                    ? '👖'
+                    : cat === 'Footwear'
+                    ? '👟'
+                    : cat === 'Jackets'
+                    ? '🧥'
+                    : cat === 'Dresses'
+                    ? '👗'
+                    : '🎒'}
+                </div>
+                <span className="fw-semibold small">{cat}</span>
+              </Link>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Featured Products */}
+      <div className="container">
+        <div className="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h3 className="fw-bold mb-1">Featured Products</h3>
+            <p className="text-muted small mb-0">Curated trending styles for your daily wardrobe</p>
+          </div>
+          <Link to="/products" className="btn btn-outline-dark btn-sm fw-semibold">
+            See All Products
+          </Link>
+        </div>
+
+        {loading ? (
+          <div className="text-center py-5">
+            <div className="spinner-border text-warning" role="status">
+              <span className="visually-hidden">Loading products...</span>
+            </div>
+          </div>
+        ) : products.length === 0 ? (
+          <div className="alert alert-info text-center">No products available at this time.</div>
+        ) : (
           <div className="row g-4">
-            <div className="col-md-4">
-              <div className="p-4 rounded-4 border bg-light h-100">
-                <div className="rounded-3 bg-primary text-white d-inline-flex p-3 mb-3">
-                  <i className="bi bi-wallet2 fs-3"></i>
-                </div>
-                <h4 className="fw-bold mb-2">$100k Virtual Balance</h4>
-                <p className="text-muted mb-0">
-                  Every trader starts with $100,000 in virtual funds. Test buy/sell orders without worrying about real financial losses.
-                </p>
+            {products.slice(0, 8).map((prod) => (
+              <div className="col-12 col-sm-6 col-md-4 col-lg-3" key={prod._id}>
+                <ProductCard product={prod} />
               </div>
-            </div>
-
-            <div className="col-md-4">
-              <div className="p-4 rounded-4 border bg-light h-100">
-                <div className="rounded-3 bg-success text-white d-inline-flex p-3 mb-3">
-                  <i className="bi bi-graph-up-arrow fs-3"></i>
-                </div>
-                <h4 className="fw-bold mb-2">Dynamic Real-Time Pricing</h4>
-                <p className="text-muted mb-0">
-                  Simulated price ticks based on sector volatility, market drift, and historical trends for realistic order execution.
-                </p>
-              </div>
-            </div>
-
-            <div className="col-md-4">
-              <div className="p-4 rounded-4 border bg-light h-100">
-                <div className="rounded-3 bg-warning text-dark d-inline-flex p-3 mb-3">
-                  <i className="bi bi-pie-chart-fill fs-3"></i>
-                </div>
-                <h4 className="fw-bold mb-2">Automated Portfolio Analytics</h4>
-                <p className="text-muted mb-0">
-                  Track unrealized profit/loss, average cost basis, portfolio asset allocation weights, and full execution history.
-                </p>
-              </div>
-            </div>
+            ))}
           </div>
-        </div>
-      </section>
+        )}
+      </div>
     </div>
   );
 };

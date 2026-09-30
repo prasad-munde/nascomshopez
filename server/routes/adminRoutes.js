@@ -2,27 +2,21 @@ const express = require('express');
 const router = express.Router();
 const {
   getUsers,
-  updateUserStatus,
-  getAdminTransactions,
-  addStock,
-  updateStock,
-  removeStock,
-  getAdminAnalytics,
+  getOrders,
+  updateOrderStatus,
+  getAdminStats,
+  getAdminConfig,
 } = require('../controllers/adminController');
-const { protect } = require('../middleware/authMiddleware');
-const { authorize } = require('../middleware/roleMiddleware');
+const { auth, adminOnly } = require('../middleware/auth');
 
-// All admin routes require authentication and admin role
-router.use(protect);
-router.use(authorize('admin'));
+// All admin routes require authentication and ADMIN role
+router.use(auth);
+router.use(adminOnly);
 
-router.get('/stats', getAdminAnalytics);
 router.get('/users', getUsers);
-router.put('/users/:id/status', updateUserStatus);
-router.get('/transactions', getAdminTransactions);
-router.post('/stocks', addStock);
-router.put('/stocks/:id', updateStock);
-router.delete('/stocks/:id', removeStock);
+router.get('/orders', getOrders);
+router.put('/orders/:id', updateOrderStatus);
+router.get('/stats', getAdminStats);
+router.get('/config', getAdminConfig);
 
 module.exports = router;
-
