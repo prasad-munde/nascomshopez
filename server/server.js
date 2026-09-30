@@ -1,2 +1,2 @@
-// ShopEZ Server Entry Point
+// ShopEZ Server Entry Point 
 require('./index.js');
