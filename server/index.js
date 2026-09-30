@@ -1,13 +1,15 @@
 const express = require('express');
-const mongoose = require('mongoose');
 const cors = require('cors');
+const mongoose = require('mongoose');
 const dotenv = require('dotenv');
+const path = require('path');
 
-// Load environment variables
+// Load environment variables from server directory, then root fallback
+dotenv.config({ path: path.join(__dirname, '.env') });
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 8000;
+const PORT = (process.env.PORT && process.env.PORT !== '5000') ? process.env.PORT : 8000;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/shopez';
 
 // Middleware
