@@ -44,3 +44,4 @@ const getUserTransactions = async (req, res, next) => {
 module.exports = {
   getUserTransactions,
 };
+

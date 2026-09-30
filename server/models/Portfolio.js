@@ -46,3 +46,4 @@ PortfolioSchema.index({ user: 1, stock: 1 }, { unique: true });
 PortfolioSchema.index({ user: 1, symbol: 1 });
 
 module.exports = mongoose.model('Portfolio', PortfolioSchema);
+

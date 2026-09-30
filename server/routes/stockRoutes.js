@@ -8,3 +8,4 @@ router.get('/', getStocks);
 router.get('/:symbol', getStockBySymbol);
 
 module.exports = router;
+

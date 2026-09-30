@@ -18,6 +18,7 @@ const buyStock = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
+      message: result.message,
       data: result,
     });
   } catch (error) {
@@ -43,6 +44,7 @@ const sellStock = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
+      message: result.message,
       data: result,
     });
   } catch (error) {

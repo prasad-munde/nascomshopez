@@ -25,3 +25,4 @@ router.put('/stocks/:id', updateStock);
 router.delete('/stocks/:id', removeStock);
 
 module.exports = router;
+
