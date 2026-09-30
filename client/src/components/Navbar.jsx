@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
@@ -6,23 +6,8 @@ const Navbar = () => {
   const { user, isAuthenticated, isAdmin, logout, resetBalance } = useAuth();
   const navigate = useNavigate();
   const [resetting, setResetting] = useState(false);
-  const [navCollapsed, setNavCollapsed] = useState(true);
-  const [showDropdown, setShowDropdown] = useState(false);
-  const dropdownRef = useRef(null);
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setShowDropdown(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   const handleLogout = () => {
-    setShowDropdown(false);
     logout();
     navigate('/login');
   };
@@ -32,7 +17,7 @@ const Navbar = () => {
       try {
         setResetting(true);
         await resetBalance();
-        setShowDropdown(false);
+        window.location.reload();
       } catch (err) {
         alert(err.message || 'Failed to reset balance');
       } finally {
@@ -52,64 +37,45 @@ const Navbar = () => {
           </span>
         </Link>
 
-        {/* Pure React mobile menu toggle */}
         <button
           className="navbar-toggler border-0"
           type="button"
-          onClick={() => setNavCollapsed(!navCollapsed)}
-          aria-expanded={!navCollapsed}
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarContent"
+          aria-controls="navbarContent"
+          aria-expanded="false"
           aria-label="Toggle navigation"
         >
           <span className="navbar-toggler-icon"></span>
         </button>
 
-        <div className={`collapse navbar-collapse ${navCollapsed ? '' : 'show'}`} id="navbarContent">
+        <div className="collapse navbar-collapse" id="navbarContent">
           <ul className="navbar-nav me-auto mb-2 mb-lg-0">
             {isAuthenticated ? (
               <>
                 <li className="nav-item">
-                  <NavLink
-                    className="nav-link nav-link-custom"
-                    to="/dashboard"
-                    onClick={() => setNavCollapsed(true)}
-                  >
+                  <NavLink className="nav-link nav-link-custom" to="/dashboard">
                     <i className="bi bi-speedometer2 me-1"></i> Dashboard
                   </NavLink>
                 </li>
                 <li className="nav-item">
-                  <NavLink
-                    className="nav-link nav-link-custom"
-                    to="/market"
-                    onClick={() => setNavCollapsed(true)}
-                  >
+                  <NavLink className="nav-link nav-link-custom" to="/market">
                     <i className="bi bi-graph-up-arrow me-1"></i> Market
                   </NavLink>
                 </li>
                 <li className="nav-item">
-                  <NavLink
-                    className="nav-link nav-link-custom"
-                    to="/portfolio"
-                    onClick={() => setNavCollapsed(true)}
-                  >
+                  <NavLink className="nav-link nav-link-custom" to="/portfolio">
                     <i className="bi bi-pie-chart-fill me-1"></i> Portfolio
                   </NavLink>
                 </li>
                 <li className="nav-item">
-                  <NavLink
-                    className="nav-link nav-link-custom"
-                    to="/transactions"
-                    onClick={() => setNavCollapsed(true)}
-                  >
+                  <NavLink className="nav-link nav-link-custom" to="/transactions">
                     <i className="bi bi-clock-history me-1"></i> Orders
                   </NavLink>
                 </li>
                 {isAdmin && (
                   <li className="nav-item">
-                    <NavLink
-                      className="nav-link nav-link-custom text-warning"
-                      to="/admin"
-                      onClick={() => setNavCollapsed(true)}
-                    >
+                    <NavLink className="nav-link nav-link-custom text-warning" to="/admin">
                       <i className="bi bi-shield-lock-fill me-1"></i> Admin Panel
                     </NavLink>
                   </li>
@@ -117,11 +83,7 @@ const Navbar = () => {
               </>
             ) : (
               <li className="nav-item">
-                <NavLink
-                  className="nav-link nav-link-custom"
-                  to="/market"
-                  onClick={() => setNavCollapsed(true)}
-                >
+                <NavLink className="nav-link nav-link-custom" to="/market">
                   <i className="bi bi-graph-up me-1"></i> Explore Market
                 </NavLink>
               </li>
@@ -149,18 +111,15 @@ const Navbar = () => {
                   </button>
                 </div>
 
-                {/* Pure React User Dropdown */}
-                <div className="dropdown position-relative" ref={dropdownRef}>
+                {/* User Dropdown */}
+                <div className="dropdown">
                   <button
                     className="btn btn-outline-light btn-sm dropdown-toggle d-flex align-items-center gap-2 rounded-3 px-3 py-1"
                     type="button"
-                    onClick={() => setShowDropdown(!showDropdown)}
-                    aria-expanded={showDropdown}
+                    data-bs-toggle="dropdown"
+                    aria-expanded="false"
                   >
-                    <span
-                      className="rounded-circle bg-primary text-white d-inline-flex justify-content-center align-items-center"
-                      style={{ width: '24px', height: '24px', fontSize: '0.75rem' }}
-                    >
+                    <span className="rounded-circle bg-primary text-white d-inline-flex justify-content-center align-items-center" style={{ width: '24px', height: '24px', fontSize: '0.75rem' }}>
                       {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
                     </span>
                     <span className="fw-semibold text-truncate" style={{ maxWidth: '120px' }}>
@@ -172,15 +131,7 @@ const Navbar = () => {
                       </span>
                     )}
                   </button>
-                  <ul
-                    className={`dropdown-menu dropdown-menu-end shadow-sm border-0 mt-2 ${showDropdown ? 'show' : ''}`}
-                    style={{
-                      display: showDropdown ? 'block' : 'none',
-                      position: 'absolute',
-                      right: 0,
-                      top: '100%',
-                    }}
-                  >
+                  <ul className="dropdown-menu dropdown-menu-end shadow-sm border-0 mt-2">
                     <li className="px-3 py-2 border-bottom">
                       <div className="fw-bold">{user?.name}</div>
                       <div className="text-muted small">{user?.email}</div>
@@ -192,30 +143,18 @@ const Navbar = () => {
                       </div>
                     </li>
                     <li>
-                      <Link
-                        className="dropdown-item py-2"
-                        to="/dashboard"
-                        onClick={() => setShowDropdown(false)}
-                      >
+                      <Link className="dropdown-item py-2" to="/dashboard">
                         <i className="bi bi-speedometer2 me-2"></i> Dashboard
                       </Link>
                     </li>
                     <li>
-                      <Link
-                        className="dropdown-item py-2"
-                        to="/portfolio"
-                        onClick={() => setShowDropdown(false)}
-                      >
+                      <Link className="dropdown-item py-2" to="/portfolio">
                         <i className="bi bi-pie-chart me-2"></i> Portfolio
                       </Link>
                     </li>
                     {isAdmin && (
                       <li>
-                        <Link
-                          className="dropdown-item py-2 text-warning"
-                          to="/admin"
-                          onClick={() => setShowDropdown(false)}
-                        >
+                        <Link className="dropdown-item py-2 text-warning" to="/admin">
                           <i className="bi bi-shield-check me-2"></i> Admin Center
                         </Link>
                       </li>
